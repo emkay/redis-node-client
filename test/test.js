@@ -136,9 +136,9 @@ function bufferFromString(str, encoding) {
     var enc = encoding || 'utf8';
     var buf = new Buffer(str.length);
     switch (enc) {
-        case 'utf8':   buf.utf8Write(str);   break;
-        case 'ascii':  buf.asciiWrite(str);  break;
-        case 'binary': buf.binaryWrite(str); break;
+        case 'utf8':   buf.write(str);   break;
+        case 'ascii':  buf.write(str, 0, "ascii");  break;
+        case 'binary': buf.write(str, 0, "binary"); break;
         default: 
             assert.fail("unknown encoding: " + encoding);
     }
@@ -149,7 +149,7 @@ function testParseBulkReply() {
     var a = new redisclient.ReplyParser(function (reply) {
         checkEqual(reply.type, redisclient.BULK, "testParseBulkReply a-0");
         check(reply.value instanceof Buffer, "testParseBulkReply a-1");
-        checkEqual(reply.value.utf8Slice(0, reply.value.length), "FOOBAR", "testParseBulkReply a-2");
+        checkEqual(reply.value.slice(0, reply.value.length), "FOOBAR", "testParseBulkReply a-2");
     });
     a.feed(bufferFromString("$6\r\nFOOBAR\r\n"));
 
@@ -161,7 +161,7 @@ function testParseBulkReply() {
 }
 
 Buffer.prototype.toString=function() {
-    return this.utf8Slice(0,this.length);
+    return this.slice(0,this.length);
 }
 
 function testParseMultiBulkReply() {
@@ -181,10 +181,10 @@ function testParseMultiBulkReply() {
         checkEqual(reply.value[1].value.length, 3, "testParseMultiBulkReply a-12");
         checkEqual(reply.value[2].value.length, 5, "testParseMultiBulkReply a-13");
         checkEqual(reply.value[3].value.length, 6,  "testParseMultiBulkReply a-14");
-        checkEqual(reply.value[0].value.utf8Slice(0, reply.value[0].value.length), 'FOO',   "testParseMultiBulkReply a-15");
-        checkEqual(reply.value[1].value.utf8Slice(0, reply.value[1].value.length), 'BAR',   "testParseMultiBulkReply a-16");
-        checkEqual(reply.value[2].value.utf8Slice(0, reply.value[2].value.length), 'HELLO', "testParseMultiBulkReply a-17");
-        checkEqual(reply.value[3].value.utf8Slice(0, reply.value[3].value.length), 'WORLD!', "testParseMultiBulkReply a-18");
+        checkEqual(reply.value[0].value.slice(0, reply.value[0].value.length), 'FOO',   "testParseMultiBulkReply a-15");
+        checkEqual(reply.value[1].value.slice(0, reply.value[1].value.length), 'BAR',   "testParseMultiBulkReply a-16");
+        checkEqual(reply.value[2].value.slice(0, reply.value[2].value.length), 'HELLO', "testParseMultiBulkReply a-17");
+        checkEqual(reply.value[3].value.slice(0, reply.value[3].value.length), 'WORLD!', "testParseMultiBulkReply a-18");
     });
     a.feed(bufferFromString("*4\r\n$3\r\nFOO\r\n$3\r\nBAR\r\n$5\r\nHELLO\r\n$6\r\nWORLD!\r\n"));
 
@@ -201,9 +201,9 @@ function testParseMultiBulkReply() {
         check(reply.value[0].type === redisclient.BULK, "testParseMultiBulkReply c-3");
         check(reply.value[1].type === redisclient.BULK, "testParseMultiBulkReply c-4");
         check(reply.value[2].type === redisclient.BULK, "testParseMultiBulkReply c-5");
-        checkEqual(reply.value[0].value.utf8Slice(0, reply.value[0].value.length), 'FOO', "testParseMultiBulkReply c-6");
+        checkEqual(reply.value[0].value.slice(0, reply.value[0].value.length), 'FOO', "testParseMultiBulkReply c-6");
         checkEqual(reply.value[1].value, null, "testParseMultiBulkReply c-7");
-        checkEqual(reply.value[2].value.utf8Slice(0, reply.value[2].value.length), 'BARZ', "testParseMultiBulkReply c-8");
+        checkEqual(reply.value[2].value.slice(0, reply.value[2].value.length), 'BARZ', "testParseMultiBulkReply c-8");
     });
     c.feed(bufferFromString("*3\r\n$3\r\nFOO\r\n$-1\r\n$4\r\nBARZ\r\n"));
 
@@ -220,8 +220,8 @@ function testParseMultiBulkReply() {
         check(reply.value[0].value instanceof Buffer, "testParseMultiBulkReply d-6");
         check(reply.value[1].value instanceof Buffer, "testParseMultiBulkReply d-7");
         checkEqual(typeof(reply.value[2].value), "number", "testParseMultiBulkReply d-8");
-        checkEqual(reply.value[0].value.utf8Slice(0, reply.value[0].value.length), 'subscribe', "testParseMultiBulkReply d-9");
-        checkEqual(reply.value[1].value.utf8Slice(0, reply.value[1].value.length), '#redis', "testParseMultiBulkReply d-10");
+        checkEqual(reply.value[0].value.slice(0, reply.value[0].value.length), 'subscribe', "testParseMultiBulkReply d-9");
+        checkEqual(reply.value[1].value.slice(0, reply.value[1].value.length), '#redis', "testParseMultiBulkReply d-10");
         checkEqual(reply.value[2].value, 1, "testParseMultiBulkReply d-11");
     });
     d.feed(bufferFromString("*3\r\n$9\r\nsubscribe\r\n$6\r\n#redis\r\n:1\r\n*3\r\n$7\r\nmessage\r\n"));
@@ -246,7 +246,7 @@ function testParseInlineReply() {
     var b = new redisclient.ReplyParser(function (reply) {
         checkEqual(reply.type, redisclient.INLINE, "testParseInlineReply b-0");
         check(reply.value instanceof Buffer, "testParseInlineReply b-1");
-        checkEqual(reply.value.utf8Slice(0, reply.value.length), 'WHATEVER', "testParseInlineReply b-2");
+        checkEqual(reply.value.slice(0, reply.value.length), 'WHATEVER', "testParseInlineReply b-2");
     });
     b.feed(bufferFromString("+WHATEVER\r\n"));
 }
@@ -271,14 +271,14 @@ function testParseErrorReply() {
     var a = new redisclient.ReplyParser(function (reply) {
         checkEqual(reply.type, redisclient.ERROR, "testParseErrorReply c-0");
         check(reply.value instanceof Buffer, "testParseErrorReply c-1");
-        checkEqual(reply.value.utf8Slice(0, reply.value.length), "ERR solar flare", "testParseErrorReply c-2");
+        checkEqual(reply.value.slice(0, reply.value.length), "ERR solar flare", "testParseErrorReply c-2");
     });
     a.feed(bufferFromString("-ERR solar flare\r\n"));
 
     var b = new redisclient.ReplyParser(function (reply) {
         checkEqual(reply.type, redisclient.ERROR, "testParseErrorReply b-0");
         check(reply.value instanceof Buffer, "testParseErrorReply b-1");
-        checkEqual(reply.value.utf8Slice(0, reply.value.length), "hiccup", "testParseErrorReply b-2");
+        checkEqual(reply.value.slice(0, reply.value.length), "hiccup", "testParseErrorReply b-2");
     });
     b.feed(bufferFromString("-hiccup\r\n"));
 }
@@ -369,7 +369,7 @@ function testSETANDGETMULTIBYTE() {
 
     client.get('testUtf8Key', function (err, value) {
         if (err) assert.fail(err, "testSETANDGETMULTIBYTE");
-        checkEqual(value.utf8Slice(0, value.length), testValue, "testSETANDGETMULTIBYTE");
+        checkEqual(value.slice(0, value.length), testValue, "testSETANDGETMULTIBYTE");
     });
 }
 
@@ -1814,8 +1814,8 @@ function testStoreAnImage(callback) {
 
         client.get('png_image', function (err, value) {
             if (err) assert.fail(err, "testStoreAnImage (large; 3)");
-            checkEqual(value.binarySlice(0, value.length), 
-                       imageBuffer.binarySlice(0, imageBuffer.length), 
+            checkEqual(value.slice(0, value.length), 
+                       imageBuffer.slice(0, imageBuffer.length), 
                        "testStoreAnImage (large; 4)");
             redisclient.debugMode = wasDebugMode;
             testEXPIRE();
